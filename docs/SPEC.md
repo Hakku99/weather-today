@@ -1,6 +1,6 @@
 # Today's Weather - Specification
 
-Status: Planning baseline reviewed; search, themes/tests, local frontend credential boundary, and detailed field/error/loading/selection contracts confirmed. The Pre-Implementation Approval Gate is pending.
+Status: Approved implementation baseline. The user explicitly approved the updated Phase 1 and Phase 2 and authorized execution on 2026-10-03; see PLAN's Implementation Approval record. Historical notes below distinguish earlier scope confirmations from that subsequent overall approval.
 Date: 2026-10-03 (Asia/Kuala_Lumpur).
 
 ## Authoritative Sources
@@ -13,8 +13,9 @@ Date: 2026-10-03 (Asia/Kuala_Lumpur).
 | User instruction dated 2026-10-02 | Complete SPECIFY and ALIGN & PLAN only; preserve original sources; no bootstrap, dependency installation, or implementation before explicit approval; English artifacts and Chinese conversation. |
 | User follow-up dated 2026-10-02 | UI must reference the Figma design linked in the brief and use the supplied images in the root `assets/` directory. |
 | User-provided Figma duplicate dated 2026-10-02 | The user duplicated the brief's design because the original file lacks editor access. Use file `6Tpic5YuQTvZNG8qF9medS` as the working UI reference for this project; retain the original link as provenance. Read-only layer inspection and all four frame renders were verified on this date. This authorizes documentation correction, not application implementation. |
-| User decisions dated 2026-10-03 | Correct illustration geometry; include automated tests and a light/dark switcher in delivery; use local execution with a reviewer-configured browser-visible key and no backend. The user subsequently confirmed one combined city/country search input, including the proposed city-only and city-plus-country examples. Overall implementation approval remains pending. |
+| User decisions dated 2026-10-03 | Correct illustration geometry; include automated tests and a light/dark switcher in delivery; use local execution with a reviewer-configured browser-visible key and no backend. The user subsequently confirmed one combined city/country search input, including the proposed city-only and city-plus-country examples. Overall implementation approval was subsequently granted; see PLAN. |
 | User behavior-contract confirmation dated 2026-10-03 | Following requirements review and proposal revisions, the user authorized updating SPEC/PLAN with Clear semantics, weather-field degradation, candidate selection, request ownership/cancellation, loading and disabled/read-only feedback, focus behavior, and corresponding acceptance scenarios. These are confirmed project interpretations where the PDFs are silent; no implementation approval is implied. |
+| User implementation approval dated 2026-10-03 | The user explicitly confirmed approval of the updated Phase 1 and Phase 2, then authorized work to begin. The overall approval gate is satisfied; earlier pending statements are historical. |
 
 The authoritative PDFs are preserved in `docs/requirements/`; their contents match the original SHA-256 baselines below. The root-level PDF files are no longer present. Both PDFs govern the product together. This specification interprets them and never silently reduces their requirements.
 
@@ -32,7 +33,7 @@ Initial repository inspection found only the protocol, two PDFs, `.gitignore`, G
 
 Required scope: React UI, asynchronous OpenWeather integration, search/clear/search-again/delete, informative validation and API errors, loading and empty states, history surviving refresh, responsive reference-based design, maintainable components, clean quality checks, and complete setup/assumption documentation.
 
-Optional in the sources but **explicitly confirmed by the user on 2026-10-03**: automated tests and both light/dark themes with a switcher. They are required delivery scope. This scope confirmation is not authorization to start implementation.
+Optional in the sources but **explicitly confirmed by the user on 2026-10-03**: automated tests and both light/dark themes with a switcher. They are required delivery scope. The subsequent overall implementation approval is recorded in PLAN.
 
 ## Functional Requirements and Acceptance
 
@@ -202,7 +203,7 @@ These explicit assumptions satisfy the brief's request for a separate assumption
 8. Apply the Weather Field Contract for core-field failures, per-field degradation, observed high/low semantics, numeric validation, and complete versus degraded success. Degradation is an exception path, not permission to omit valid required information.
 9. Both themes and automated tests were explicitly confirmed as delivery requirements on 2026-10-03. Deployment, public hosting, and submission to a recruiter are not implied by completing the assessment.
 
-Items 1 and 9, the local browser-visible API-key boundary without a backend, and the detailed weather-field and query-interaction contracts were confirmed on 2026-10-03. Other assumptions remain documented implementation defaults. Approval to update these contracts does not unlock implementation; the overall gate remains pending.
+Items 1 and 9, the local browser-visible API-key boundary without a backend, and the detailed weather-field and query-interaction contracts were confirmed on 2026-10-03. Other assumptions remain documented implementation defaults. These contract confirmations preceded the overall implementation approval now recorded in PLAN.
 
 ## Data, Integration, Security, and Privacy
 
@@ -227,7 +228,7 @@ The final English `README.md` must contain:
 5. Assumptions above, units/timezones and UTC fallback, partial-data behavior, duplicate-history policy, the difference between Clear and Delete (including deletion during replay), read-only/loading interactions, storage limitations, and the client-visible credential trade-off.
 6. Concise structure/architecture explanation, significant technology choices, asset provenance/attribution, and any genuine limitations or external blockers.
 
-Verify the README by following it in a clean checkout or equivalent isolated clean installation after approval. It must be easy for a reviewer to run without guessing hidden prerequisites. Do not create a README now that falsely claims an application already exists.
+Verify the README by following it in a clean checkout or equivalent isolated clean installation after approval. It must be easy for a reviewer to run without guessing hidden prerequisites. Keep README feature/status claims aligned with actual implementation and validation.
 
 ## Source Coverage
 

@@ -1,15 +1,19 @@
 # Today's Weather - Architecture and Execution Plan
 
 Date: 2026-10-03 (Asia/Kuala_Lumpur).
-Status: Planning baseline reviewed; search, themes/tests, local frontend credential boundary, and detailed field/error/loading/selection contracts confirmed. **Overall Pre-Implementation Approval Gate pending; implementation has not started.**
+Status: **Pre-Implementation Approval Gate approved on 2026-10-03. Phase 3 EXECUTE & VERIFY active; M0 bootstrap complete. M1 is next.** The approved baseline includes the combined search input, dual themes/tests, local frontend credential boundary, Figma geometry, and detailed field/error/loading/selection contracts.
+
+## Implementation Approval
+
+On 2026-10-03, the user explicitly confirmed approval of the updated Phase 1 and Phase 2, then instructed the Agent to begin work after discussing the M0 prerequisites. This unlocks implementation under this plan. No repeat approval is required for ordinary engineering work. Earlier pending-gate statements in the historical review below describe the pre-approval state and are superseded by this record.
 
 ## Goal
 
 Deliver the React weather assessment specified in [SPEC.md](SPEC.md), fully integrating both original PDFs, including responsive references, durable history, README/setup, and final submission verification. Follow [AAPDS.md](../AAPDS.md) through execution and final review only after its mandatory approval gate.
 
-## Proposed Architecture - Not Yet Approved
+## Approved Architecture
 
-Decisions confirmed on 2026-10-03: use one combined city/country search input, deliver automated tests and both themes with a switcher, and run locally with a reviewer-configured browser-visible OpenWeather key and no backend. The user also authorized the illustration documentation correction. SPEC defines the accepted city-only and comma-separated city/country forms. The subsequent review confirmed Clear scope, weather-field degradation, candidate transitions, request ownership, and accessible loading/control feedback for documentation updates. These planning decisions do not unlock M0; the overall implementation gate remains pending.
+Decisions confirmed on 2026-10-03: use one combined city/country search input, deliver automated tests and both themes with a switcher, and run locally with a reviewer-configured browser-visible OpenWeather key and no backend. The user also authorized the illustration documentation correction. SPEC defines the accepted city-only and comma-separated city/country forms. The subsequent review confirmed Clear scope, weather-field degradation, candidate transitions, request ownership, and accessible loading/control feedback for documentation updates. These planning decisions were subsequently included in the overall implementation approval recorded above.
 
 Use one client-rendered React single-page application built with Vite and TypeScript. The application has one page, no routing requirement, no accounts, and no shared database. React state owns the current search and weather; localStorage persists search history and theme. Native `fetch` provides asynchronous OpenWeather access.
 
@@ -54,7 +58,7 @@ Visual validation must compare the four actual source viewports first, then inte
 
 **Confirmed by the user on 2026-10-03 for this local frontend assessment:** browser-to-OpenWeather requests with a reviewer-provided key in `.env.local`, exposed through `VITE_OPENWEATHER_API_KEY`, with no backend. The key is visible to anyone using that built application. `.env.local` keeps it out of source control, not out of the browser. No key has been requested, read, stored, or used during planning.
 
-This keeps reviewer startup simple and matches a frontend-only assessment. The user has accepted this assessment-local trade-off; overall implementation approval remains pending. Do not publish a build containing a private/shared credential or claim the key is confidential.
+This keeps reviewer startup simple and matches a frontend-only assessment. The user has accepted this assessment-local trade-off; overall implementation approval is now recorded above. Do not publish a build containing a private/shared credential or claim the key is confidential.
 
 **Unselected alternative:** React SPA plus a small server-side weather proxy with a server-only key, bounded provider endpoints, input validation, and abuse controls. This protects the key from the browser but adds server startup, configuration, deployment, and testing. Revisit only if credential confidentiality or public hosting becomes a requirement, with renewed architectural alignment. No hosting platform is proposed or authorized now.
 
@@ -62,7 +66,7 @@ This keeps reviewer startup simple and matches a frontend-only assessment. The u
 
 ## Technology Stack and Grounding
 
-Research performed 2026-10-02. Only public documentation and package metadata were read; nothing was installed. These are compatibility-based recommendations, not executable installation guarantees. M0 will confirm exact compatible versions and record them in the manifest/lockfile.
+Planning research was performed on 2026-10-02 without installing packages. M0 on 2026-10-03 resolved the approved majors to stable exact versions in the manifest/lockfile, checked package engine/peer metadata, and installed without forced peer overrides. Execution evidence is recorded below.
 
 | Technology | Proposed major | Grounding and reason |
 | --- | --- | --- |
@@ -131,7 +135,7 @@ Do not create empty speculative directories. No additional task/status/report hi
 
 ## Milestones
 
-All M0-M5 are **NOT STARTED** and remain gated by explicit approval.
+M0 is **COMPLETE**. M1-M5 are **NOT STARTED**. The implementation approval gate is satisfied; each remaining milestone requires its own validation evidence before completion.
 
 | Milestone | Deliverables | Required validation / exit evidence |
 | --- | --- | --- |
@@ -144,21 +148,36 @@ All M0-M5 are **NOT STARTED** and remain gated by explicit approval.
 
 Execute coherent increments with inspect -> implement -> verify -> repair -> inspect diff -> update PLAN -> checkpoint. Do not mark a milestone done while its required checks fail. Git checkpoints should be reviewable, without assuming one task equals one commit or introducing unrelated changes. Deployment and sending the submission remain outside this plan.
 
+### M0 Execution Evidence - 2026-10-03
+
+- Recorded the user's approval before scaffolding. Inspected the clean Git baseline and preserved user changes and source files. Added only the React entry, toolchain/configuration, environment example, safe ignores, initial README, and test harnesses; weather features and detailed Figma UI remain M1-M3 work.
+- Environment: Windows, Node 24.16.0, npm 10.9.2. Project engine floor is Node 24.15.0 within major 24, reflecting jsdom 30's published requirement. Exact direct dependencies are pinned in `package.json`; transitive dependencies are locked in `package-lock.json`. Core resolved versions: React 19.3.0, TypeScript 6.0.3, Vite 8.3.2, React plugin 6.1.1, ESLint 10.11.0, typescript-eslint 8.71.0, Vitest 5.0.3, Testing Library React 16.3.3, and Playwright 1.63.0.
+- Grounding: checked registry engine/peer metadata; used Context7 Vitest documentation for jsdom/setup/cleanup and official Vite/Playwright documentation for startup and browser configuration. No preview versions or forced peer overrides. Country normalization dependencies are deferred to M1.
+- `npm ci`: PASS, clean reinstall from the lockfile. `npm ls --depth=0`: PASS, no invalid peer tree. Installation audit reported zero known vulnerabilities at execution time; this is not a permanent security guarantee.
+- `npm run check`: PASS after the clean install and again after the browser runner change. ESLint has zero warnings; strict TypeScript checks pass; one DOM harness test passes; production build succeeds. The test proves entry/render setup only.
+- `npm run test:e2e:install` and `npm run test:e2e`: PASS using project-local browser storage. Five bootstrap checks pass: desktop Chromium, Firefox, WebKit, and Pixel 7/iPhone 13 emulation. Each verifies the document title, visible React heading, and absence of page runtime errors. These are browser harness checks, not weather acceptance or visual fidelity evidence.
+- Browser repair evidence: the initial default-cache run passed four projects but Firefox failed before loading any page with `spawn UNKNOWN`. A native launch and Windows event log identified a SideBySide `mozglue` activation error. An isolated reinstall of the same revision under the project launched successfully; forcing reinstall into the default cache still failed. The small Node runner now applies [Playwright's documented browser-path setting](https://playwright.dev/docs/browsers#managing-browser-binaries) consistently for install/test to ignored `.cache/playwright/`. All five projects then passed. The underlying system-cache issue is not claimed fixed; no browser coverage was removed.
+- Production preview: PASS. Started the built app on loopback port 4175, loaded it with Chromium, confirmed the heading and no runtime errors, then closed the browser and temporary server.
+- Updated AGENTS with executable commands. README describes the current bootstrap honestly, clean setup, local browser installation, test coverage, and client-visible key boundary. `.env.example` contains no credential; real environment files, caches, reports, dependencies, and build output are ignored.
+- Final preservation check: AAPDS and both authoritative PDFs match SPEC's SHA-256 baselines; all four root PNGs match their pre-edit hashes. `git diff --check` passes. Reviewed the configuration/source changes and safe-ignore behavior; no source requirements or supplied assets were modified.
+- No live OpenWeather request or final Figma comparison has been performed at M0. Those remain required later milestone checks; M0 completion does not imply the application or final review is complete.
+
 ## Validation Strategy
 
-Planned commands are contracts to implement at M0; they **do not exist yet** and have not been run:
+These commands are implemented at M0. Executed results and their coverage limits are recorded in the milestone evidence below:
 
-| Purpose | Planned command |
+| Purpose | Command |
 | --- | --- |
 | Reproduce dependencies | `npm ci` |
 | Start development UI | `npm run dev` |
 | Lint | `npm run lint` |
 | Type-check | `npm run typecheck` |
 | Unit/component tests, one run | `npm run test -- --run` |
-| Browser setup | `npx playwright install` after local dependency installation |
+| Browser setup | `npm run test:e2e:install` after local dependency installation |
 | Browser/E2E tests | `npm run test:e2e` |
 | Production build | `npm run build` |
 | Inspect built app | `npm run preview` |
+| Combined static/DOM/build checks | `npm run check` |
 
 Use deterministic network fixtures for repeatable edge cases, supplemented by an authorized live-key smoke test. Never replace production weather with fixtures or imply fixture success proves the provider works.
 
@@ -195,11 +214,11 @@ Store concise executed command results, browser coverage, visual evidence refere
 | Source drawing artifacts and accessibility | Source uses outlined sample text, small mobile labels/timestamps, 34px history circles, 40px mobile Search, and clipped fixed-height rectangles. Use live text, legible sizes/contrast, larger non-overlapping hit areas, and natural content height; verify and document adaptations at M3. |
 | User-supplied assets | Verified backgrounds and the common `sun.png` hero against all four renders; preserve the 648:655 hero ratio and inspect visible glow/cropping. `cloud.png` has no confirmed slot in these frames. Root PNGs stay unchanged. Search/delete glyph retrieval and font sourcing remain ordinary M3 implementation tasks; they were not added during planning. |
 | History not globally durable | localStorage persists same-origin refresh; browser deletion/private mode/storage policy can limit it. Handle failures, document scope; no backend synchronization. |
-| Runtime/tool execution | Initial restricted shell and Node-reader startup failed before reading files. Read-only shell/PDF tooling subsequently succeeded via the permitted execution path. This does not verify future app installs or browser execution; reassess at M0. |
+| Runtime/tool execution | Restricted shell startup still fails before command execution; the permitted execution path supports package installation and checks. Default-cache Firefox reports a Windows SideBySide/mozglue launch failure, also after reinstall; the same browser revision launches from project-local storage. Browser scripts consistently use ignored project-local storage through the documented Playwright setting. This resolves the project execution path without claiming to repair the system cache. |
 | Toolchain compatibility drift | TypeScript 6 selected because the current typed linter excludes 7. Recheck exact peer versions during bootstrap; no force-installing incompatible dependencies. |
 | Original documents contain personal/contact details | Preserve them as requested; do not publish the repository/PDFs or message listed contacts as part of this task. |
 
-## Current Status and Pre-Implementation Audit
+## Historical Planning Audit
 
 - Complete AAPDS v1.2.2 read: all sections 1-69.
 - MQ_Frontend read: all four pages, both text and rendered visuals.
@@ -213,13 +232,13 @@ Store concise executed command results, browser coverage, visual evidence refere
 - Agent control: concise AGENTS and minimal CLAUDE created; no duplicate status system.
 - Source preservation at initial planning: the recorded five SHA-256 checks covered the protocol, two root originals, and two byte-identical copies under `docs/requirements/`.
 - Current source locations verified on 2026-10-02: the root PDF files are no longer present; the authoritative PDFs reside in `docs/requirements/`. Both PDFs and `AAPDS.md` were rechecked against the SPEC baselines, and all three hashes match. This documentation update reflects the current paths without changing source contents or implementation approval status.
-- Product implementation: **NOT STARTED**. No framework generation, package installation, manifest/lockfile, product modules, or feature code.
-- Application tests/build/lint/type-check: **NOT RUN**, correctly deferred until approval and implementation.
+- At the planning checkpoint, product implementation was **NOT STARTED**. No framework generation, package installation, manifest/lockfile, product modules, or feature code.
+- At the planning checkpoint, application tests/build/lint/type-check were **NOT RUN**, correctly deferred until approval and implementation.
 - Review follow-up on 2026-10-03: corrected hero layout-versus-render bounds and proportional bitmap alignment in SPEC and this PLAN, including separate mobile subject/glow verification. Recorded confirmed dual themes, automated tests, and local frontend credential boundary without a backend. The subsequent user confirmation resolved search presentation: updated both documents to one combined input, including syntax, label/helper, Clear/focus, responsive layout, README examples, and validation coverage. No supplied images, source PDFs, or application files were changed.
 - Follow-up validation: re-read the edited geometry and decision sections; PDF/protocol hashes still match SPEC and all four PNG hashes match the review baseline. No application tests were run for these documentation-only changes.
 - Behavior-contract update on 2026-10-03: the user authorized applying the reviewed Clear, field-degradation, candidate-selection, cancellation/commit, and loading/accessibility proposals to SPEC/PLAN. Added explicit normal versus degraded acceptance, time fallbacks, read-only/disabled states, single-action progress with shared status, replay deletion semantics, focus behavior, and corresponding M1-M5 verification. This review excludes design reinspection; existing Figma measurements, assets, architecture, and technology choices remain unchanged.
 - Behavior-update validation: compared both documents with their pre-edit snapshots and reviewed the changed contracts and verification matrix. Confirmed existing design measurements, combined-input syntax, out-of-scope boundary, credential architecture, technology grounding, and repository structure are preserved. English prose, table/fence structure, whitespace, contract references, and the pending implementation gate passed documentation checks. Both PDFs and AAPDS match SPEC baselines; all four PNG hashes match the pre-edit snapshot. No application tests, installs, builds, or live API checks were run for this documentation-only change.
-- Implementation approval: **PENDING**. Scope/credential and behavior-contract decisions above are confirmed, but no overall implementation approval or completed milestone is asserted.
+- Implementation approval: **APPROVED on 2026-10-03**, as recorded above. M0 subsequently passed its exit checks; see its execution evidence. The remaining implementation milestones are not yet complete.
 
 ## Pre-Implementation Review
 
@@ -227,11 +246,11 @@ Store concise executed command results, browser coverage, visual evidence refere
 2. **Major requirements:** city/country OpenWeather search; full weather details; Search, Clear, Search again, Delete; clear validation/API errors and loading; refresh persistence; responsive light/dark UI; reusable code; README; comprehensive final checks.
 3. **Important assumptions and confirmed decisions:** one combined input supports a city alone or `City, Country`, with English country names/ISO alpha-2 codes; successful searches are separate history events; Clear resets the current query/result and preserves history; no automatic initial weather. Confirmed contracts distinguish complete/degraded success, network processing from candidate waiting, and deletion of an old event from cancellation of the active query. The combined input, dual themes, and automated tests are confirmed delivery scope. Local execution with a reviewer-configured browser-visible key and no backend is confirmed; deployment is out of scope.
 4. **Recommended technology stack:** React 19, TypeScript 6, Vite 8 with React plugin 6, Node 24 LTS/npm, ESLint 10/typescript-eslint 8, Vitest 5/Testing Library, Playwright 1, native browser APIs and CSS.
-5. **Architecture:** one SPA; focused React components, request service/hooks, localStorage, OpenWeather geocoding then coordinate-based current weather. The reviewer-configured browser-visible key and absence of a backend are confirmed; the overall implementation gate remains pending.
+5. **Architecture:** one SPA; focused React components, request service/hooks, localStorage, OpenWeather geocoding then coordinate-based current weather. The reviewer-configured browser-visible key and absence of a backend are confirmed; the overall implementation gate is satisfied.
 6. **Repository structure:** shared controls and user-supplied assets at root; SPEC/PLAN under docs and authoritative PDFs under docs/requirements; after approval add src components/hooks/services/helpers/styles, colocated tests, E2E tests, configuration, and README.
 7. **Milestones:** M0 bootstrap; M1 weather/search; M2 persistent history; M3 responsive themes/accessibility; M4 reviewer documentation; M5 verification and AAPDS Final Review.
 8. **Verification strategy:** unit/component checks for logic and failures; real-browser searches, all buttons, reload persistence and responsive states; both themes against Figma at 1440 x 900 / 393 x 852 plus intermediate widths; explicit adaptation review; complete-field/degraded acceptance, candidate/cancellation/commit races, loading/control feedback, keyboard focus, and reduced motion; lint/type-check/tests/build; real API smoke; clean README startup; original-requirement-vs-product review and hash checks.
 9. **Documentation grounding:** Earlier planning used Context7 for React, Vite, and Vitest plus official sources/registry for compatibility and provider/browser contracts. The subsequent design and behavior-contract documentation revisions did not repeat or change those technology recommendations. All PDF pages, supplied PNGs, and the duplicate's four Figma frame renders/layers were inspected. UI geometry, fonts, and theme surfaces are now grounded in direct design evidence; live API behavior and actual application rendering remain unverified until implementation.
 10. **Material alternatives:** add a server-side proxy if the key must be confidential or public hosting is required; a full-stack React framework adds machinery without other required server features. IndexedDB is unnecessary for the current small history scope.
 
-**Implementation has not started. Please approve this plan or specify changes.**
+**Review approved on 2026-10-03. Proceed under the approved architecture and milestone validation requirements.**
