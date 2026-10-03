@@ -17,5 +17,6 @@ export type Weather = {
   observedAt: number | null
   utcOffset: number | null
   observation: string | null
+  observationDisplay: string | null
   partial: boolean
 }

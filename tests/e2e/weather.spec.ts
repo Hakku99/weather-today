@@ -13,15 +13,19 @@ test('renders all real-response fields and the supplied local decorative asset',
   await page.getByRole('button', { name: 'Search', exact: true }).click()
   const card = page.getByRole('region', { name: 'Current weather' })
   await expect(card).toBeVisible()
-  for (const field of ['Johor Bahru, MY', '29°C', '30°C', '26°C', 'Clouds', 'overcast clouds', '82%']) {
+  for (const field of ['Johor Bahru, MY', '29°C', '30°C', '26°C', 'Clouds', '82%']) {
     await expect(card.getByText(field, { exact: true })).toBeVisible()
   }
-  await expect(card.getByText(/UTC\+08:00/)).toBeVisible()
+  await expect(card.locator('.weather-observation dd')).toHaveText(/^\d{2}-\d{2}-\d{4} \d{2}:\d{2} (am|pm)$/)
+  await expect(card.locator('.weather-observation dd')).toHaveAccessibleDescription(/UTC\+08:00/)
+  await expect(card.getByText('overcast clouds')).toHaveCount(0)
+  await expect(card.getByText('Johor', { exact: true })).toHaveCount(0)
+  await expect(card.getByText('High and low are the observed range from the current weather report.')).toHaveCount(0)
   await expect(page.getByRole('status')).not.toContainText('unavailable')
   expect(requests[0]?.searchParams.get('q')).toBe('Johor,MY')
   expect(requests[1]?.searchParams.get('units')).toBe('metric')
   expect(requests[1]?.searchParams.get('lat')).toBe(String(johor.latitude))
-  const geometry = await card.locator('img').evaluate((image: HTMLImageElement) => ({
+  const geometry = await page.locator('.weather-art').evaluate((image: HTMLImageElement) => ({
     loaded: image.complete && image.naturalWidth > 0, ratio: image.naturalWidth / image.naturalHeight,
   }))
   expect(geometry.loaded).toBe(true)
@@ -57,7 +61,7 @@ test('chooses a non-first match by keyboard, invalidates edits, and locks duplic
   await expect(choice).toBeVisible()
   await choice.focus()
   await page.keyboard.press('Enter')
-  await expect(page.getByRole('button', { name: 'Clear' })).toBeFocused()
+  await expect(page.getByRole('button', { name: 'Reset' })).toBeFocused()
   await expect(page.getByRole('status')).toContainText('Fetching weather for Singapore, SG')
   await expect.poll(() => weatherRequests).toBe(1)
   await page.getByRole('button', { name: 'Searching...' }).evaluate((button: HTMLButtonElement) => { button.click(); button.click() })
@@ -67,7 +71,7 @@ test('chooses a non-first match by keyboard, invalidates edits, and locks duplic
   await expect(page.getByRole('region', { name: 'Search History' }).getByRole('listitem')).toHaveCount(1)
 })
 
-test('Clear cancels geocoding and weather, preserves newer loading, and supports reduced motion', async ({ page }) => {
+test('Reset cancels geocoding and weather, preserves newer loading, and supports reduced motion', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' })
   let geoRequests = 0
   let weatherRequests = 0
@@ -87,14 +91,14 @@ test('Clear cancels geocoding and weather, preserves newer loading, and supports
   })
   await page.goto('/')
   const input = page.getByRole('textbox')
-  const clear = page.getByRole('button', { name: 'Clear' })
+  const clear = page.getByRole('button', { name: 'Reset' })
   await input.fill('Johor')
   await input.press('Enter')
   await expect.poll(() => geoRequests).toBe(1)
   await expect(input).toHaveAttribute('readonly')
   await expect(input).toBeEnabled()
   await expect(page.getByRole('button', { name: 'Searching...' })).toBeDisabled()
-  await expect(page.getByText('Search in progress. Use Clear to cancel.')).toBeVisible()
+  await expect(page.getByRole('status').filter({ hasText: 'Use Reset to cancel.' })).toBeVisible()
   expect(await page.locator('.search-indicator').evaluate(el => getComputedStyle(el).animationName)).toBe('none')
   await clear.click()
   await expect(input).toBeFocused()
@@ -106,14 +110,14 @@ test('Clear cancels geocoding and weather, preserves newer loading, and supports
   await clear.click()
   await input.fill('Johor, Malaysia')
   await input.press('Enter')
-  await expect(page.getByRole('heading', { name: 'Current weather' })).toBeVisible()
+  await expect(page.locator('.weather-panel')).toHaveAttribute('data-phase', 'success')
   weatherRelease.resolve()
   await expect(page.getByRole('status')).toContainText('Weather loaded for Johor Bahru, MY.')
   expect(weatherRequests).toBe(2)
   await expect(page.getByRole('region', { name: 'Search History' }).getByRole('listitem')).toHaveCount(1)
   await clear.click()
   await expect(page.getByRole('status')).toBeEmpty()
-  await expect(page.getByRole('heading', { name: 'Current weather' })).toHaveCount(0)
+  await expect(page.locator('.weather-location dd')).toHaveText('Search a city')
 })
 
 test('reports provider errors, no match/mismatch, malformed data, and degraded fields honestly', async ({ page }) => {
@@ -138,14 +142,14 @@ test('reports provider errors, no match/mismatch, malformed data, and degraded f
   const input = page.getByRole('textbox')
   await input.fill('Johor, MY')
   await input.press('Enter')
-  await expect(page.getByRole('heading', { name: 'Current weather' })).toBeVisible()
+  await expect(page.locator('.weather-panel')).toHaveAttribute('data-phase', 'success')
   for (const [scenario, expected] of [['http401', 'API key'], ['http403', 'API key'], ['http404', 'No weather'],
     ['http429', 'limit reached'], ['http503', 'temporarily unavailable'], ['network', 'Check your connection'],
     ['empty', 'No matching location'], ['mismatch', 'requested country'], ['json', 'invalid data'], ['core', 'invalid data']]) {
     mode = scenario!
     await page.getByRole('button', { name: 'Search', exact: true }).click()
     await expect(page.getByRole('status')).toContainText(expected!)
-    await expect(page.getByRole('heading', { name: 'Current weather' })).toHaveCount(0)
+    await expect(page.locator('.weather-location dd')).toHaveText('Search a city')
     await expect(page.getByRole('region', { name: 'Search History' }).getByRole('listitem')).toHaveCount(1)
     await expect(input).toHaveValue('Johor, MY')
     await expect(input).not.toHaveAttribute('readonly')
@@ -153,13 +157,13 @@ test('reports provider errors, no match/mismatch, malformed data, and degraded f
   expect(weatherRequests).toBe(2)
   mode = 'partial'
   await input.press('Enter')
-  await expect(page.getByRole('heading', { name: 'Current weather' })).toBeVisible()
+  await expect(page.locator('.weather-panel')).toHaveAttribute('data-phase', 'success')
   await expect(page.getByRole('status')).toContainText('Some weather details are unavailable.')
   await expect(page.getByText('0°C', { exact: true })).toBeVisible()
-  await expect(page.getByText('Description unavailable')).toBeVisible()
+  await expect(page.getByText('Description unavailable')).toHaveCount(0)
   await expect(page.getByRole('region', { name: 'Search History' }).getByRole('listitem')).toHaveCount(2)
   await expect(page.getByText('N/A', { exact: true })).toHaveCount(3)
-  await expect(page.getByText(/01\/01\/1970.*UTC/)).toBeVisible()
+  await expect(page.locator('.weather-observation dd')).toHaveText(/01-01-1970.*UTC/)
 })
 
 test('timeout releases read-only controls and permits a fresh search', async ({ page }) => {
@@ -185,13 +189,13 @@ test('timeout releases read-only controls and permits a fresh search', async ({ 
   await expect(page.getByRole('button', { name: 'Search', exact: true })).toBeEnabled()
   release.resolve()
   await input.press('Enter')
-  await expect(page.getByRole('heading', { name: 'Current weather' })).toBeVisible()
-  await page.getByRole('button', { name: 'Clear' }).click()
+  await expect(page.locator('.weather-panel')).toHaveAttribute('data-phase', 'success')
+  await page.getByRole('button', { name: 'Reset' }).click()
   await expect(input).toBeFocused()
   await expect(page.getByRole('status')).toBeEmpty()
 })
 
-test('retains the UTC fallback notice while editing and removes it on replacement or Clear', async ({ page }) => {
+test('retains the UTC fallback notice while editing and removes it on replacement or Reset', async ({ page }) => {
   let requests = 0
   let weatherRequests = 0
   const nextLocations = deferred<void>()
@@ -214,7 +218,7 @@ test('retains the UTC fallback notice while editing and removes it on replacemen
   await input.fill('Johor, MY')
   await input.press('Enter')
   await expect(card).toBeVisible()
-  await expect(card.getByText(/\(UTC\)/)).toBeVisible()
+  await expect(card.locator('.weather-observation dd')).toHaveText(/\(UTC\)/)
   for (const value of ['Singapore', 'Singapore, SG', '']) {
     await input.fill(value)
     await expect(notice).toHaveCount(1)
@@ -224,8 +228,8 @@ test('retains the UTC fallback notice while editing and removes it on replacemen
   expect(requests).toBe(2)
   await input.fill('Singapore, SG')
   await input.press('Enter')
-  await expect(status).toHaveText('Finding locations...')
-  await expect(card).toHaveCount(0)
+  await expect(status).toHaveText('Finding locations... Use Reset to cancel.')
+  await expect(card.locator('.weather-location dd')).toHaveText('Search a city')
   await expect(notice).toHaveCount(0)
   nextLocations.resolve()
   await expect(card.getByText('Singapore, SG')).toBeVisible()
@@ -234,8 +238,8 @@ test('retains the UTC fallback notice while editing and removes it on replacemen
   await input.fill('Johor, MY')
   await input.press('Enter')
   await expect(notice).toHaveCount(1)
-  await page.getByRole('button', { name: 'Clear' }).click()
-  await expect(card).toHaveCount(0)
+  await page.getByRole('button', { name: 'Reset' }).click()
+  await expect(card.locator('.weather-location dd')).toHaveText('Search a city')
   await expect(status).toBeEmpty()
   await expect(input).toBeFocused()
 })

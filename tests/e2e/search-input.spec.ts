@@ -18,7 +18,7 @@ test('searches all accepted forms by click/Enter without page navigation', async
   page.on('request', request => { if (new URL(request.url()).pathname === '/data/2.5/weather') weatherRequests++ })
   page.on('framenavigated', () => navigations++)
   const input = page.getByRole('textbox', { name: 'City, Country' })
-  await expect(input).toHaveAttribute('placeholder', 'Johor, MY')
+  await expect(input).toHaveAttribute('placeholder', 'Enter a city, e.g. Johor, MY')
   let submissions = 0
   for (const [query, location] of [['Johor', 'Johor, MY'], ['Johor, Malaysia', 'Johor, MY'],
     ['Johor, MY', 'Johor, MY'], ['  Kuala   Lumpur , my ', 'Kuala Lumpur, MY'],
@@ -28,7 +28,7 @@ test('searches all accepted forms by click/Enter without page navigation', async
     await expect(page.getByRole('status')).toHaveText(previousFeedback ?? '')
     if (query === 'Johor') await page.getByRole('button', { name: 'Search', exact: true }).click()
     else await input.press('Enter')
-    await expect(page.getByRole('heading', { name: 'Current weather' })).toBeVisible()
+    await expect(page.locator('.weather-panel')).toHaveAttribute('data-phase', 'success')
     await expect.poll(() => weatherRequests).toBe(++submissions)
     await expect(page.getByRole('status')).toHaveText(`Weather loaded for ${location}.`)
     await expect(page.getByRole('button', { name: 'Search', exact: true })).toBeEnabled()
@@ -38,7 +38,7 @@ test('searches all accepted forms by click/Enter without page navigation', async
   expect(navigations).toBe(0)
 })
 
-test('rejects invalid qualifiers without requesting; keyboard correction/Clear work', async ({ page }) => {
+test('rejects invalid qualifiers without requesting; keyboard correction/Reset work', async ({ page }) => {
   await page.goto('/')
   let requests = 0
   page.on('request', request => { if (request.url().startsWith('https://api.openweathermap.org/')) requests++ })
@@ -57,10 +57,10 @@ test('rejects invalid qualifiers without requesting; keyboard correction/Clear w
   await page.keyboard.press('Enter')
   await expect(page.getByRole('status')).toContainText('Weather loaded for Johor, MY.')
   await page.keyboard.press('Tab')
-  await expect(page.getByRole('button', { name: 'Clear' })).toBeFocused()
+  await expect(page.getByRole('button', { name: 'Reset' })).toBeFocused()
   await page.keyboard.press('Space')
   await expect(input).toHaveValue('')
   await expect(input).toBeFocused()
   await expect(page.getByRole('status')).toBeEmpty()
-  await expect(page.getByRole('heading', { name: 'Current weather' })).toHaveCount(0)
+  await expect(page.locator('.weather-location dd')).toHaveText('Search a city')
 })

@@ -28,7 +28,7 @@ describe('query ownership', () => {
       await first
     })
     expect(result.current.loading).toBe(true)
-    expect(result.current.state.message).toBe('Finding locations...')
+    expect(result.current.state.message).toBe('Finding locations... Use Reset to cancel.')
     expect(service.getWeather).not.toHaveBeenCalled()
     await act(async () => { newer.resolve([singapore]); await second })
     expect(result.current.state.weather?.location).toEqual(singapore)

@@ -25,6 +25,7 @@ describe('weather boundary', () => {
     expect(weather).toMatchObject({ location: johor, temperature: 28.6, minimum: 26.2, maximum: 30.1,
       humidity: 82, category: 'Clouds', description: 'overcast clouds', observedAt: 1_791_000_000, utcOffset: 28_800, partial: false })
     expect(weather.observation).toContain('(UTC+08:00)')
+    expect(weather.observationDisplay).toMatch(/^\d{2}-\d{2}-\d{4} \d{2}:\d{2} (am|pm)$/)
     expect(formatTemperature(weather.temperature)).toBe('29°C')
   })
   it.each([undefined, null, '', '20', NaN, Infinity])('rejects invalid current temperature %j', (temperature) => {
@@ -42,15 +43,16 @@ describe('weather boundary', () => {
     const weather = parseWeather({ main: { temp: 0, temp_min: -100, temp_max: 0, humidity: 0 },
       weather: [{ main: 'Unfamiliar', description: 'readable description', icon: 'unknown' }], dt: 0, timezone: 0 }, johor)
     expect(weather).toMatchObject({ temperature: 0, humidity: 0, utcOffset: 0, observedAt: 0, partial: false })
-    expect(weather.observation).toContain('01/01/1970')
+    expect(weather.observation).toContain('01-01-1970')
+    expect(weather.observationDisplay).toBe('01-01-1970 12:00 am')
     expect(weather.observation).toContain('(UTC)')
   })
   it.each([undefined, null, '', '82', -1, 101, NaN, Infinity])('degrades invalid humidity %j', (humidity) => {
     const payload = fullWeather()
     expect(parseWeather({ ...payload, main: { ...payload.main, humidity } }, johor)).toMatchObject({ humidity: null, partial: true })
   })
-  it.each([undefined, null, '', ' ', 45])('degrades invalid description %j', (description) => {
-    expect(parseWeather({ ...fullWeather(), weather: [{ main: 'Clouds', description }] }, johor)).toMatchObject({ description: null, partial: true })
+  it.each([undefined, null, '', ' ', 45])('keeps missing/invalid unused description optional: %j', (description) => {
+    expect(parseWeather({ ...fullWeather(), weather: [{ main: 'Clouds', description }] }, johor)).toMatchObject({ description: null, partial: false })
   })
   it('handles independent missing bounds and validates raw order before rounding', () => {
     const payload = fullWeather()
@@ -66,17 +68,20 @@ describe('weather boundary', () => {
 
 describe('observation context', () => {
   it.each([undefined, null, '', '0', NaN, Infinity, 8.64e12 + 1, 0.5])('does not invent an observation for %j', (dt) => {
-    expect(formatObservation(dt, 0).observation).toBeNull()
+    expect(formatObservation(dt, 0)).toMatchObject({ observation: null, observationDisplay: null })
   })
   it.each([undefined, null, '', '0', NaN, Infinity, -43201, 50401, 0.5])('labels UTC fallback for offset %j', (offset) => {
-    expect(formatObservation(0, offset)).toEqual({ observedAt: 0, utcOffset: null, observation: '01/01/1970, 12:00 am (UTC)' })
+    expect(formatObservation(0, offset)).toEqual({ observedAt: 0, utcOffset: null,
+      observation: '01-01-1970 12:00 am (UTC)', observationDisplay: '01-01-1970 12:00 am (UTC)' })
     expect(parseWeather({ ...fullWeather(), timezone: offset }, johor).partial).toBe(true)
   })
   it('formats positive/negative/fractional-hour offsets without using browser time', () => {
-    expect(formatObservation(0, 19800).observation).toBe('01/01/1970, 05:30 am (UTC+05:30)')
-    expect(formatObservation(0, -12600).observation).toBe('31/12/1969, 08:30 pm (UTC-03:30)')
+    expect(formatObservation(0, 19800)).toMatchObject({ observation: '01-01-1970 05:30 am (UTC+05:30)', observationDisplay: '01-01-1970 05:30 am' })
+    expect(formatObservation(0, -12600)).toMatchObject({ observation: '31-12-1969 08:30 pm (UTC-03:30)', observationDisplay: '31-12-1969 08:30 pm' })
   })
   it('falls back to UTC if adding the offset overflows the date range', () => {
-    expect(formatObservation(8.64e12, 3600)).toMatchObject({ utcOffset: null, observation: expect.stringContaining('(UTC)') })
+    const time = formatObservation(8.64e12, 3600)
+    expect(time).toMatchObject({ utcOffset: null, observation: expect.stringContaining('(UTC)') })
+    expect(time.observationDisplay).toBe(time.observation)
   })
 })

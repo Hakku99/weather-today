@@ -8,13 +8,14 @@ import type { HistoryEvent } from '../helpers/historyStorage'
 type SearchState = {
   phase: 'idle' | 'loading' | 'choosing' | 'success' | 'error'
   message: string
+  announcement: string
   invalid: boolean
   weather: Weather | null
   candidates: Location[]
   replayId: string | null
 }
 type Query = { controller: AbortController; busy: boolean; candidates: Location[] }
-const initial: SearchState = { phase: 'idle', message: '', invalid: false, weather: null, candidates: [], replayId: null }
+const initial: SearchState = { phase: 'idle', message: '', announcement: '', invalid: false, weather: null, candidates: [], replayId: null }
 
 export function useWeatherSearch(service: WeatherService, onSuccess?: (location: Location) => void) {
   const [input, setInput] = useState('')
@@ -45,13 +46,17 @@ export function useWeatherSearch(service: WeatherService, onSuccess?: (location:
     if (active.current !== query) return
     query.busy = true
     query.candidates = []
-    setState({ ...initial, phase: 'loading', replayId, message: `Fetching weather for ${location.city}, ${location.countryCode}...` })
+    setState({ ...initial, phase: 'loading', replayId, message: `Fetching weather for ${location.city}, ${location.countryCode}... Use Reset to cancel.` })
     try {
       const weather = await service.getWeather(location, query.controller.signal)
       if (active.current !== query) return
       active.current = null
       onSuccess?.(weather.location)
-      setState({ ...initial, phase: 'success', weather, message: `Weather loaded for ${location.city}, ${location.countryCode}.${weather.partial ? ' Some weather details are unavailable.' : ''}` })
+      setState({
+        ...initial, phase: 'success', weather,
+        message: weather.partial ? 'Some weather details are unavailable.' : '',
+        announcement: `Weather loaded for ${location.city}, ${location.countryCode}.`,
+      })
     } catch (error) { fail(query, error) }
   }
 
@@ -75,7 +80,7 @@ export function useWeatherSearch(service: WeatherService, onSuccess?: (location:
     }
     const query: Query = { controller: new AbortController(), busy: true, candidates: [] }
     active.current = query
-    setState({ ...initial, phase: 'loading', message: 'Finding locations...' })
+    setState({ ...initial, phase: 'loading', message: 'Finding locations... Use Reset to cancel.' })
     try {
       const locations = await service.findLocations(parsed.query, query.controller.signal)
       if (active.current !== query) return

@@ -43,12 +43,16 @@ export default function SearchHistory({ records, loading, replayId, input, onRep
                 </div>
                 <div className="history-actions">
                   <button type="button" data-action="replay" disabled={loading}
-                    aria-label={`Search again for ${label}`} onClick={() => onReplay(event)}>
-                    {replaying && <span className="search-indicator" aria-hidden="true" />}
-                    {replaying ? 'Searching...' : 'Search again'}
+                    title={`Search again for ${label}`} aria-label={`Search again for ${label}`} onClick={() => onReplay(event)}>
+                    <span className="history-circle" aria-hidden="true">
+                      {replaying ? <span className="search-indicator" /> : <span className="history-search-icon" />}
+                    </span>
+                    <span className={replaying ? 'action-caption' : 'sr-only'}>{replaying ? 'Searching...' : ''}</span>
                   </button>
                   <button type="button" data-action="delete" aria-label={`Delete record for ${label}`}
-                    onClick={() => remove(event, index)}>Delete</button>
+                    title={`Delete record for ${label}`} onClick={() => remove(event, index)}>
+                    <span className="history-circle" aria-hidden="true"><span className="history-delete-icon" /></span>
+                  </button>
                 </div>
               </li>
             )

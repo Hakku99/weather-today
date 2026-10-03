@@ -14,6 +14,21 @@ async function searchJohor(page: Page) {
   await expect(page.getByRole('status')).toContainText('Weather loaded for Johor Bahru, MY.')
 }
 
+async function holdHistoryLock(page: Page) {
+  await page.evaluate(async key => {
+    let acquired!: () => void
+    const held = new Promise<void>(resolve => { acquired = resolve })
+    const testWindow = window as Window & { releaseHistoryLock?: () => void }
+    const released = new Promise<void>(resolve => { testWindow.releaseHistoryLock = resolve })
+    void navigator.locks.request(key, async () => { acquired(); await released })
+    await held
+  }, HISTORY_KEY)
+}
+
+async function releaseHistoryLock(page: Page) {
+  await page.evaluate(() => (window as Window & { releaseHistoryLock?: () => void }).releaseHistoryLock!())
+}
+
 test('stale tabs preserve other searches and never resurrect deleted IDs on replay', async ({ page, context }) => {
   await context.route('https://api.openweathermap.org/**', route => route.fulfill({ json:
     new URL(route.request().url()).pathname.includes('/geo/') ? [locationPayload(johor)] : fullWeather(),
@@ -42,6 +57,7 @@ test('stale tabs preserve other searches and never resurrect deleted IDs on repl
 })
 
 test('concurrent tab additions and deletion serialize against the latest saved history', async ({ page, context }) => {
+  await page.clock.install({ time: new Date('2026-10-03T10:00:00Z') })
   await context.route('https://api.openweathermap.org/**', route => route.fulfill({ json:
     new URL(route.request().url()).pathname.includes('/geo/') ? [locationPayload(johor)] : fullWeather(),
   }))
@@ -51,18 +67,13 @@ test('concurrent tab additions and deletion serialize against the latest saved h
   await Promise.all([page.reload(), other.goto('/')])
   await expect(historyRows(page)).toHaveCount(1)
   await expect(historyRows(other)).toHaveCount(1)
-  await page.evaluate(async key => {
-    let acquired!: () => void
-    const held = new Promise<void>(resolve => { acquired = resolve })
-    const testWindow = window as Window & { releaseHistoryLock?: () => void }
-    const released = new Promise<void>(resolve => { testWindow.releaseHistoryLock = resolve })
-    void navigator.locks.request(key, async () => { acquired(); await released })
-    await held
-  }, HISTORY_KEY)
+  // Both tabs share this clock. Queue-order coverage must not race the 2s lock timeout.
+  await page.clock.pauseAt(new Date('2026-10-03T11:00:00Z'))
+  await holdHistoryLock(page)
   await Promise.all([searchJohor(page), searchJohor(other)])
   await page.locator('[data-history-id="original"]').getByRole('button', { name: /Delete/ }).click()
   expect((await persisted(page)).map(event => event.id)).toEqual(['original'])
-  await page.evaluate(() => (window as Window & { releaseHistoryLock?: () => void }).releaseHistoryLock!())
+  await releaseHistoryLock(page)
   await expect.poll(() => persisted(page)).toHaveLength(2)
   await expect(historyRows(page)).toHaveCount(2)
   await expect(historyRows(other)).toHaveCount(2)
@@ -101,19 +112,14 @@ test('clock rollback and equal timestamps keep insertion order, IDs, and times a
 })
 
 test('interleaved completions retain each action queue position across tabs', async ({ page, context }) => {
+  await page.clock.install({ time: new Date('2026-10-03T10:00:00Z') })
   await context.route('https://api.openweathermap.org/**', route => route.fulfill({ json:
     new URL(route.request().url()).pathname.includes('/geo/') ? [locationPayload(johor)] : fullWeather(),
   }))
   const other = await context.newPage()
   await Promise.all([page.goto('/'), other.goto('/')])
-  await page.evaluate(async key => {
-    let acquired!: () => void
-    const held = new Promise<void>(resolve => { acquired = resolve })
-    const testWindow = window as Window & { releaseHistoryLock?: () => void }
-    const released = new Promise<void>(resolve => { testWindow.releaseHistoryLock = resolve })
-    void navigator.locks.request(key, async () => { acquired(); await released })
-    await held
-  }, HISTORY_KEY)
+  await page.clock.pauseAt(new Date('2026-10-03T11:00:00Z'))
+  await holdHistoryLock(page)
   await searchJohor(page)
   const first = (await historyIds(page))[0]!
   await searchJohor(other)
@@ -121,12 +127,49 @@ test('interleaved completions retain each action queue position across tabs', as
   await searchJohor(page)
   await expect(historyRows(page)).toHaveCount(2)
   const last = (await historyIds(page))[0]!
-  await page.evaluate(() => (window as Window & { releaseHistoryLock?: () => void }).releaseHistoryLock!())
+  await releaseHistoryLock(page)
   await expect.poll(async () => (await persisted(page)).map(event => event.id)).toEqual([last, middle, first])
   await expect.poll(() => historyIds(page)).toEqual([last, middle, first])
   await expect.poll(() => historyIds(other)).toEqual([last, middle, first])
   await page.reload()
   await expect.poll(() => historyIds(page)).toEqual([last, middle, first])
+})
+
+test('expired lock waits retain unsaved events and retry at the next mutation queue position', async ({ page, context }) => {
+  await page.clock.install({ time: new Date('2026-10-03T10:00:00Z') })
+  await context.route('https://api.openweathermap.org/**', route => route.fulfill({ json:
+    new URL(route.request().url()).pathname.includes('/geo/') ? [locationPayload(johor)] : fullWeather(),
+  }))
+  const other = await context.newPage()
+  await Promise.all([page.goto('/'), other.goto('/')])
+  await page.clock.pauseAt(new Date('2026-10-03T11:00:00Z'))
+  await holdHistoryLock(page)
+  await searchJohor(page)
+  const first = (await historyIds(page))[0]!
+  await page.clock.runFor(1_000)
+  await searchJohor(other)
+  const middle = (await historyIds(other))[0]!
+  await page.clock.runFor(999)
+  await expect(page.getByRole('status')).toContainText('Saving history changes')
+  await page.clock.runFor(1)
+  await expect(page.getByRole('status')).toContainText('only for this session')
+  await expect(other.getByRole('status')).toContainText('Saving history changes')
+  expect(await persisted(page)).toEqual([])
+  expect(await historyIds(page)).toEqual([first])
+  // The first wait has expired; a new action retries it behind the other tab's live wait.
+  await searchJohor(page)
+  await expect(historyRows(page)).toHaveCount(2)
+  const last = (await historyIds(page))[0]!
+  await releaseHistoryLock(page)
+  const expected = [last, first, middle]
+  await expect.poll(async () => (await persisted(page)).map(event => event.id)).toEqual(expected)
+  for (const tab of [page, other]) {
+    await expect.poll(() => historyIds(tab)).toEqual(expected)
+    await expect(tab.getByRole('status')).not.toContainText('only for this session')
+    await expect(tab.getByRole('status')).not.toContainText('Saving history changes')
+    await tab.reload()
+    await expect.poll(() => historyIds(tab)).toEqual(expected)
+  }
 })
 
 test('search, reload, fresh coordinate replay, exact duplicate deletion, and final empty state', async ({ page }) => {
@@ -155,12 +198,13 @@ test('search, reload, fresh coordinate replay, exact duplicate deletion, and fin
   const originalTime = await rows.first().locator('time').getAttribute('datetime')
   const originalLabel = await rows.first().locator('time').textContent()
   expect(originalTime).not.toBe(new Date(fullWeather().dt * 1000).toISOString())
+  await expect.poll(() => persisted(page)).toHaveLength(1)
   await page.reload()
   await expect(rows).toHaveCount(1)
   await expect(rows.first()).toHaveAttribute('data-history-id', originalId!)
   await expect(rows.first().locator('time')).toHaveAttribute('datetime', originalTime!)
   await expect(rows.first().locator('time')).toHaveText(originalLabel!)
-  await expect(page.getByRole('region', { name: 'Current weather' })).toHaveCount(0)
+  await expect(page.locator('.weather-location dd')).toHaveText('Search a city')
   expect(weather).toBe(1)
   await input.fill('invalid, qualifier')
   await rows.first().getByRole('button', { name: /Search again/ }).focus()
@@ -175,13 +219,15 @@ test('search, reload, fresh coordinate replay, exact duplicate deletion, and fin
   await page.keyboard.press('Space')
   await expect(rows).toHaveCount(1)
   await expect(rows.first().getByRole('button', { name: /Delete/ })).toBeFocused()
-  await expect(page.getByRole('region', { name: 'Current weather' })).toBeVisible()
+  await expect(page.locator('.weather-panel')).toHaveAttribute('data-phase', 'success')
+  await expect.poll(async () => (await persisted(page)).map(event => event.id)).toEqual([await rows.first().getAttribute('data-history-id')])
   await page.reload()
   await expect(rows).toHaveCount(1)
   expect(await rows.first().getAttribute('data-history-id')).not.toBe(originalId)
   await rows.first().getByRole('button', { name: /Delete/ }).focus()
   await page.keyboard.press('Enter')
   await expect(input).toBeFocused()
+  await expect.poll(() => persisted(page)).toHaveLength(0)
   await page.reload()
   await expect(history.getByText('No Record')).toBeVisible()
   expect(weather).toBe(2)
@@ -218,13 +264,13 @@ for (const outcome of ['success', 'failure', 'cancel'] as const) {
     await expect(page.getByRole('status')).toContainText('Fetching weather for Johor Bahru, MY...')
     await expect(page.locator('.search-indicator')).toHaveCount(0)
     await expect(page.getByRole('textbox')).toHaveAttribute('readonly')
-    if (outcome === 'cancel') await page.getByRole('button', { name: 'Clear' }).click()
+    if (outcome === 'cancel') await page.getByRole('button', { name: 'Reset' }).click()
     release.resolve()
     if (outcome === 'success') {
       await expect(history.getByRole('listitem')).toHaveCount(1)
       expect(await history.getByRole('listitem').getAttribute('data-history-id')).not.toBe('original')
       expect(await history.locator('time').getAttribute('datetime')).not.toBe(saved().completedAt)
-      await page.getByRole('button', { name: 'Clear' }).click()
+      await page.getByRole('button', { name: 'Reset' }).click()
       await expect(history.getByRole('listitem')).toHaveCount(1)
     } else {
       if (outcome === 'failure') await expect(page.getByRole('status')).toContainText('temporarily unavailable')
@@ -279,7 +325,7 @@ test('corrupt entries are salvaged, malformed envelopes warn, and hydration neve
     expect(await page.evaluate(key => localStorage.getItem(key), HISTORY_KEY)).toBe(raw)
   }
   await expect(page.getByRole('region', { name: 'Search History' }).getByRole('listitem')).toHaveCount(1)
-  await expect(page.getByRole('heading', { name: 'Current weather' })).toHaveCount(0)
+  await expect(page.locator('.weather-location dd')).toHaveText('Search a city')
 })
 
 for (const mode of ['denied', 'quota'] as const) {
@@ -307,7 +353,7 @@ for (const mode of ['denied', 'quota'] as const) {
     await expect(page.getByRole('status')).toContainText('only for this session')
     await history.getByRole('button', { name: /Search again/ }).click()
     await expect(history.getByRole('listitem')).toHaveCount(2)
-    await page.getByRole('button', { name: 'Clear' }).click()
+    await page.getByRole('button', { name: 'Reset' }).click()
     await expect(history.getByRole('listitem')).toHaveCount(2)
     await expect(page.getByRole('status')).toContainText('only for this session')
     await history.getByRole('listitem').first().getByRole('button', { name: /Delete/ }).click()

@@ -39,17 +39,19 @@ export function parseLocations(payload: unknown, requestedCountry?: string): Loc
   return matches
 }
 
-export function formatObservation(timestamp: unknown, offset: unknown): {
-  observedAt: number | null; utcOffset: number | null; observation: string | null
-} {
+export function formatObservation(timestamp: unknown, offset: unknown):
+  Pick<Weather, 'observedAt' | 'utcOffset' | 'observation' | 'observationDisplay'> {
   const observedAt = finite(timestamp) && Number.isInteger(timestamp) && Number.isFinite(new Date(timestamp * 1000).getTime()) ? timestamp : null
   // OpenWeather specifies seconds from UTC; accept civil offsets from UTC-12 to UTC+14.
   const utcOffset = finite(offset) && Number.isInteger(offset) && offset >= -43_200 && offset <= 50_400 ? offset : null
-  if (observedAt === null) return { observedAt, utcOffset, observation: null }
-  const format = (seconds: number) => new Intl.DateTimeFormat('en-GB', {
-    timeZone: 'UTC', day: '2-digit', month: '2-digit', year: 'numeric',
-    hour: '2-digit', minute: '2-digit', hour12: true,
-  }).format(new Date(seconds * 1000))
+  if (observedAt === null) return { observedAt, utcOffset, observation: null, observationDisplay: null }
+  const format = (seconds: number) => {
+    const parts = Object.fromEntries(new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'UTC', day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit', hour12: true,
+    }).formatToParts(new Date(seconds * 1000)).map(({ type, value }) => [type, value]))
+    return `${parts.day}-${parts.month}-${parts.year} ${parts.hour}:${parts.minute} ${parts.dayPeriod?.toLowerCase()}`
+  }
   try {
     if (utcOffset !== null) {
       const absolute = Math.abs(utcOffset)
@@ -57,13 +59,15 @@ export function formatObservation(timestamp: unknown, offset: unknown): {
       const minutes = String(Math.floor(absolute % 3600 / 60)).padStart(2, '0')
       const seconds = absolute % 60
       const label = utcOffset === 0 ? 'UTC' : `UTC${utcOffset < 0 ? '-' : '+'}${hours}:${minutes}${seconds ? `:${String(seconds).padStart(2, '0')}` : ''}`
-      return { observedAt, utcOffset, observation: `${format(observedAt + utcOffset)} (${label})` }
+      const observationDisplay = format(observedAt + utcOffset)
+      return { observedAt, utcOffset, observation: `${observationDisplay} (${label})`, observationDisplay }
     }
   } catch { /* Fall back to explicit UTC when local conversion cannot be formatted. */ }
   try {
-    return { observedAt, utcOffset: null, observation: `${format(observedAt)} (UTC)` }
+    const observation = `${format(observedAt)} (UTC)`
+    return { observedAt, utcOffset: null, observation, observationDisplay: observation }
   } catch {
-    return { observedAt, utcOffset: null, observation: null }
+    return { observedAt, utcOffset: null, observation: null, observationDisplay: null }
   }
 }
 
@@ -81,7 +85,7 @@ export function parseWeather(payload: unknown, location: Location): Weather {
   const observation = formatObservation(data.dt, data.timezone)
   return {
     location, temperature: main.temp, category, description, humidity, minimum, maximum, ...observation,
-    partial: description === null || humidity === null || minimum === null || maximum === null
+    partial: humidity === null || minimum === null || maximum === null
       || observation.observation === null || observation.utcOffset === null,
   }
 }
