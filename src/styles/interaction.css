@@ -1,0 +1,18 @@
+/* Interaction essentials; measured Figma composition and themes are implemented in M3. */
+.search-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.search-controls input { box-sizing: border-box; min-block-size: 44px; max-inline-size: 100%; }
+button { min-block-size: 44px; }
+.search-submit { min-inline-size: 9rem; }
+.search-guidance { min-block-size: 2em; }
+.search-feedback { min-block-size: 3em; }
+input:read-only { background: #f2f2f2; border-color: #666; }
+button:disabled { color: #555; background: #eee; cursor: default; }
+.search-indicator {
+  display: inline-block; inline-size: 0.75rem; block-size: 0.75rem; margin-inline-end: 0.5rem;
+  border: 2px solid currentColor; border-inline-end-color: transparent; border-radius: 50%;
+  animation: search-rotation 1s linear infinite;
+}
+.weather-art { max-inline-size: 100%; block-size: auto; }
+dd, button { overflow-wrap: anywhere; }
+@keyframes search-rotation { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .search-indicator { animation: none; } }

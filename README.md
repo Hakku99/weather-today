@@ -2,7 +2,7 @@
 
 A React frontend assessment for current-weather search and local search history.
 
-**Current status: M0 bootstrap complete.** The React entry, development/build tooling, strict type checks, lint, and DOM/browser test harnesses are present and verified. Weather search, history, and the Figma UI are planned in M1-M3 and are not implemented yet. See [the plan](docs/PLAN.md) for executed validation and milestone status.
+**Current status: M1 complete, including live API verification.** Search, explicit location selection, current weather, loading/errors, timeout, and Clear cancellation are implemented and verified. History and the detailed Figma UI remain M2-M3 work. See [the plan](docs/PLAN.md) for evidence and milestone status.
 
 ## Local setup
 
@@ -13,9 +13,27 @@ npm ci
 npm run dev
 ```
 
-Open the local address printed by Vite (normally `http://127.0.0.1:5173`). The server binds to loopback. The M0 entry needs no API key and makes no weather requests.
+Open the local address printed by Vite (normally `http://127.0.0.1:5173`). The server binds to loopback. No automatic location or weather request occurs on startup.
 
-For the later weather integration, copy `.env.example` to `.env.local`, set your own `VITE_OPENWEATHER_API_KEY`, and restart the development server. `.env.local` is ignored by Git. This client-only assessment exposes that key in the browser; the environment file does not make it confidential. No backend, public deployment, or shared credential is included.
+Before searching, copy `.env.example` to `.env.local`, set your own `VITE_OPENWEATHER_API_KEY`, and restart the development server. Use an OpenWeather key with access to [Direct Geocoding](https://openweathermap.org/api/geocoding-api) and [Current Weather](https://openweathermap.org/api/current). Rebuild after changing the key for production preview. Missing configuration shows setup guidance; rejected keys show a provider-access error. `.env.local` is ignored by Git. This client-only assessment exposes that key in the browser; the environment file does not make it confidential. No backend, public deployment, or shared credential is included.
+
+## City and country input
+
+Enter `Johor`, `Johor, Malaysia`, or `Johor, MY`, then select Search or press Enter. Country is optional. Whitespace is normalized for parsing; multiword cities, punctuation, and non-ASCII names are preserved. English country names and dataset aliases resolve case-insensitively to two-letter codes. Ambiguous aliases require a code instead of silently choosing a country.
+
+The first comma separates city from country; remaining commas may belong to a supported country name, such as `Seoul, Korea, Republic of`. State syntax (`Austin, TX, US`), empty parts, and unknown countries show an inline error before any request. A bare `Singapore` remains a city query. Country data comes from `i18n-iso-countries`, with only its English locale registered for the browser.
+
+Search first resolves up to five locations. If multiple valid locations match, choose one using its name, country, optional region, and coordinates; no first-match selection is automatic. Any supplied country qualifier is enforced. Editing while waiting removes the old choices without making another request. Once selected, current weather is fetched by that location's coordinates in metric units. The validated selected identity stays attached to the result rather than being replaced by a nearby weather-station name.
+
+## Weather and cancellation
+
+Current temperature, observed high/low, category, description, humidity, and observation time are shown with the unchanged supplied `sun.png` decorative artwork. Temperatures retain raw Celsius values internally and are rounded only for display. High/low describe the current response's observed range, not a daily forecast. The artwork is decorative and does not claim to encode the current weather condition.
+
+Observation times use day/month/year and 12-hour time at the location's UTC offset, labeled explicitly. OpenWeather defines `dt` as a UTC Unix timestamp and `timezone` as a shift in seconds. Missing/invalid offsets fall back to labeled UTC. Missing timestamps show "Observation time unavailable"; the current time is never substituted. Current temperature, condition category, and validated location/coordinates are required for success. Missing auxiliary fields show their individual fallback and one "Some weather details are unavailable." notice.
+
+During networking and response processing, the input is read-only but can be focused, selected, and copied. Search is disabled with a single indicator; the shared status identifies the current phase. Clear remains available, aborts/invalidates the query, removes input/result/error/choices, and returns focus to the input. Old completions cannot overwrite newer results or controls. Requests time out after 15 seconds each, including waiting for the response body; location-choice waiting has no timer. Editing the input after success keeps the current result and its feedback, including any partial-data notice, until another search or Clear removes that result. Editing after an error clears the old error. Failed requests preserve input and permit a fresh search. There are no automatic retries. Reduced-motion preference uses a static indicator.
+
+History, replay/deletion, and themes are not yet implemented. The current page uses basic semantic controls and interaction styling; its layout is not the completed Figma design.
 
 ## Checks
 
@@ -37,7 +55,9 @@ npm run test:e2e
 
 Both browser scripts use ignored `.cache/playwright/` in this project through Playwright's supported `PLAYWRIGHT_BROWSERS_PATH` setting. This avoids a Windows Firefox launch failure observed with the system cache and keeps installation and execution on the same binaries. No additional wrapper dependency is required. On Linux, install operating-system prerequisites with `npm run test:e2e:install -- --with-deps` if needed.
 
-Playwright starts and stops its own local server on port 4173. Keep that port free. Projects cover desktop Chromium, Firefox, WebKit, and mobile Chromium/WebKit emulation. Tests currently verify bootstrap execution, not weather functionality or final visual fidelity. Reports go to ignored `playwright-report/`; failure evidence goes to ignored `test-results/`.
+Playwright starts and stops its own local server on port 4173. Keep that port free. Projects cover desktop Chromium, Firefox, WebKit, and mobile Chromium/WebKit emulation. The server receives a dummy fixture credential and tests intercept OpenWeather requests; these tests never prove live provider access and do not use your local key. Tests verify complete/degraded data, all three query forms, country enforcement, candidate selection/invalidation, request failures, timeout/retry, cancellation/ownership, keyboard/focus, and reduced motion. Reports go to ignored `playwright-report/`; failure evidence goes to ignored `test-results/`.
+
+Separate live verification passed on 2026-10-03 with the user's locally configured key: all three Johor examples, explicit first/non-first location selection, weather fields against real responses, country enforcement, and Clear. Desktop Chromium/Firefox/WebKit and mobile Chromium/WebKit emulation were checked without mocked provider responses. The ordinary production preview also passed a real search and no-match handling. Credentials were not recorded in verification logs or screenshots. Provider failures and cancellation races remain covered by controlled fixtures rather than deliberately exhausting or invalidating the real key. Final design fidelity is pending M3/M5.
 
 To inspect the built application:
 
@@ -54,4 +74,4 @@ npm run preview
 - `assets/`: unchanged user-supplied design images. Detailed asset attribution and implemented behavior will be completed with the UI/documentation milestones.
 - `docs/requirements/`: unchanged authoritative assessment PDFs. These include personal/contact details and are not intended for public deployment.
 
-The final application will use the approved combined city/country input, OpenWeather, browser-local history, and both Figma themes. Their detailed assumptions live in SPEC; this bootstrap does not claim those features are complete.
+The final application will add browser-local history and both Figma themes. Their detailed assumptions live in SPEC; this increment does not claim those features are complete.

@@ -20,6 +20,7 @@
     "check": "npm run lint && npm run typecheck && npm run test -- --run && npm run build"
   },
   "dependencies": {
+    "i18n-iso-countries": "7.14.0",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },
