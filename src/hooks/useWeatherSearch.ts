@@ -3,6 +3,7 @@ import { parseSearchQuery } from '../helpers/parseSearchQuery'
 import { RequestCancelled, WeatherError } from '../services/errors'
 import type { WeatherService } from '../services/weather'
 import type { Location, Weather } from '../types/weather'
+import type { HistoryEvent } from '../helpers/historyStorage'
 
 type SearchState = {
   phase: 'idle' | 'loading' | 'choosing' | 'success' | 'error'
@@ -10,11 +11,12 @@ type SearchState = {
   invalid: boolean
   weather: Weather | null
   candidates: Location[]
+  replayId: string | null
 }
 type Query = { controller: AbortController; busy: boolean; candidates: Location[] }
-const initial: SearchState = { phase: 'idle', message: '', invalid: false, weather: null, candidates: [] }
+const initial: SearchState = { phase: 'idle', message: '', invalid: false, weather: null, candidates: [], replayId: null }
 
-export function useWeatherSearch(service: WeatherService) {
+export function useWeatherSearch(service: WeatherService, onSuccess?: (location: Location) => void) {
   const [input, setInput] = useState('')
   const [state, setState] = useState(initial)
   const active = useRef<Query | null>(null)
@@ -39,17 +41,27 @@ export function useWeatherSearch(service: WeatherService) {
     })
   }
 
-  async function fetchWeather(query: Query, location: Location) {
+  async function fetchWeather(query: Query, location: Location, replayId: string | null = null) {
     if (active.current !== query) return
     query.busy = true
     query.candidates = []
-    setState({ ...initial, phase: 'loading', message: `Fetching weather for ${location.city}, ${location.countryCode}...` })
+    setState({ ...initial, phase: 'loading', replayId, message: `Fetching weather for ${location.city}, ${location.countryCode}...` })
     try {
       const weather = await service.getWeather(location, query.controller.signal)
       if (active.current !== query) return
       active.current = null
+      onSuccess?.(weather.location)
       setState({ ...initial, phase: 'success', weather, message: `Weather loaded for ${location.city}, ${location.countryCode}.${weather.partial ? ' Some weather details are unavailable.' : ''}` })
     } catch (error) { fail(query, error) }
+  }
+
+  function replay(event: HistoryEvent): boolean {
+    if (active.current?.busy) return false
+    invalidate()
+    const query: Query = { controller: new AbortController(), busy: true, candidates: [] }
+    active.current = query
+    void fetchWeather(query, { ...event.location }, event.id)
+    return true
   }
 
   async function search() {
@@ -105,5 +117,5 @@ export function useWeatherSearch(service: WeatherService) {
     setState(initial)
   }
 
-  return { input, state, search, select, change, clear, loading: state.phase === 'loading' }
+  return { input, state, search, select, replay, change, clear, loading: state.phase === 'loading' }
 }

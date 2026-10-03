@@ -1,13 +1,17 @@
 import { useRef } from 'react'
 import SearchForm from './components/SearchForm'
 import WeatherCard from './components/WeatherCard'
+import SearchHistory from './components/SearchHistory'
+import { useHistory } from './hooks/useHistory'
 import { useWeatherSearch } from './hooks/useWeatherSearch'
 import { weatherService, type WeatherService } from './services/weather'
 import './styles/interaction.css'
 
 export default function App({ service = weatherService }: { service?: WeatherService }) {
-  const search = useWeatherSearch(service)
+  const history = useHistory()
+  const search = useWeatherSearch(service, history.append)
   const clearButton = useRef<HTMLButtonElement>(null)
+  const input = useRef<HTMLInputElement>(null)
 
   return (
     <main>
@@ -18,6 +22,9 @@ export default function App({ service = weatherService }: { service?: WeatherSer
         feedback={search.state.message}
         invalid={search.state.invalid}
         loading={search.loading}
+        searching={search.loading && search.state.replayId === null}
+        storageWarning={history.warning}
+        input={input}
         clearButton={clearButton}
         onChange={search.change}
         onSearch={() => { void search.search() }}
@@ -43,6 +50,8 @@ export default function App({ service = weatherService }: { service?: WeatherSer
       {search.state.weather ? <WeatherCard weather={search.state.weather} /> : (
         <p>Search for a city to see its current weather.</p>
       )}
+      <SearchHistory records={history.records} loading={search.loading} replayId={search.state.replayId}
+        input={input} onReplay={(event) => { search.replay(event) }} onDelete={history.remove} />
     </main>
   )
 }

@@ -63,7 +63,8 @@ test('chooses a non-first match by keyboard, invalidates edits, and locks duplic
   await page.getByRole('button', { name: 'Searching...' }).evaluate((button: HTMLButtonElement) => { button.click(); button.click() })
   expect(weatherRequests).toBe(1)
   release.resolve()
-  await expect(page.getByText('Singapore, SG', { exact: true })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Current weather' }).getByText('Singapore, SG', { exact: true })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Search History' }).getByRole('listitem')).toHaveCount(1)
 })
 
 test('Clear cancels geocoding and weather, preserves newer loading, and supports reduced motion', async ({ page }) => {
@@ -109,6 +110,7 @@ test('Clear cancels geocoding and weather, preserves newer loading, and supports
   weatherRelease.resolve()
   await expect(page.getByRole('status')).toContainText('Weather loaded for Johor Bahru, MY.')
   expect(weatherRequests).toBe(2)
+  await expect(page.getByRole('region', { name: 'Search History' }).getByRole('listitem')).toHaveCount(1)
   await clear.click()
   await expect(page.getByRole('status')).toBeEmpty()
   await expect(page.getByRole('heading', { name: 'Current weather' })).toHaveCount(0)
@@ -144,6 +146,7 @@ test('reports provider errors, no match/mismatch, malformed data, and degraded f
     await page.getByRole('button', { name: 'Search', exact: true }).click()
     await expect(page.getByRole('status')).toContainText(expected!)
     await expect(page.getByRole('heading', { name: 'Current weather' })).toHaveCount(0)
+    await expect(page.getByRole('region', { name: 'Search History' }).getByRole('listitem')).toHaveCount(1)
     await expect(input).toHaveValue('Johor, MY')
     await expect(input).not.toHaveAttribute('readonly')
   }
@@ -154,6 +157,7 @@ test('reports provider errors, no match/mismatch, malformed data, and degraded f
   await expect(page.getByRole('status')).toContainText('Some weather details are unavailable.')
   await expect(page.getByText('0°C', { exact: true })).toBeVisible()
   await expect(page.getByText('Description unavailable')).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Search History' }).getByRole('listitem')).toHaveCount(2)
   await expect(page.getByText('N/A', { exact: true })).toHaveCount(3)
   await expect(page.getByText(/01\/01\/1970.*UTC/)).toBeVisible()
 })
@@ -176,6 +180,7 @@ test('timeout releases read-only controls and permits a fresh search', async ({ 
   await expect.poll(() => requests).toBe(1)
   await page.clock.fastForward(15_001)
   await expect(page.getByRole('status')).toContainText('timed out')
+  await expect(page.getByRole('region', { name: 'Search History' }).getByRole('listitem')).toHaveCount(0)
   await expect(input).not.toHaveAttribute('readonly')
   await expect(page.getByRole('button', { name: 'Search', exact: true })).toBeEnabled()
   release.resolve()

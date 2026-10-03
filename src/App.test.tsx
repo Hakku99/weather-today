@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import App from './App'
@@ -27,7 +27,8 @@ describe('weather search UI', () => {
     expect(input).toHaveAccessibleDescription(/Enter a city, optionally/)
     await user.type(input, `${value}{Enter}`)
     await screen.findByRole('heading', { name: 'Current weather' })
-    for (const field of ['Johor Bahru, MY', '29°C', '30°C', '26°C', 'Clouds', 'overcast clouds', '82%']) expect(screen.getByText(field)).toBeVisible()
+    const card = within(screen.getByRole('region', { name: 'Current weather' }))
+    for (const field of ['Johor Bahru, MY', '29°C', '30°C', '26°C', 'Clouds', 'overcast clouds', '82%']) expect(card.getByText(field)).toBeVisible()
     expect(screen.getByText(/UTC\+08:00/)).toBeVisible()
     expect(screen.getByRole('status')).toHaveTextContent('Weather loaded for Johor Bahru, MY.')
     expect(screen.getByRole('status')).not.toHaveTextContent('unavailable')
@@ -87,7 +88,7 @@ describe('weather search UI', () => {
     expect(screen.queryByRole('heading', { name: 'Choose a location' })).not.toBeInTheDocument()
     expect(screen.getByRole('status')).toHaveTextContent('Fetching weather for Singapore, SG...')
     await act(async () => pending.resolve(parseWeather(fullWeather(), singapore)))
-    expect(screen.getByText('Singapore, SG')).toBeVisible()
+    expect(within(screen.getByRole('region', { name: 'Current weather' })).getByText('Singapore, SG')).toBeVisible()
     expect(screen.getByRole('button', { name: 'Clear' })).toHaveFocus()
     await user.click(screen.getByRole('button', { name: 'Clear' }))
     expect(screen.queryByRole('heading', { name: 'Current weather' })).not.toBeInTheDocument()
@@ -130,7 +131,7 @@ describe('weather search UI', () => {
       await user.clear(input)
       if (value) await user.type(input, value)
       expect(screen.getByRole('status').textContent).toBe(feedback)
-      expect(screen.getByText('Johor Bahru, MY')).toBeVisible()
+      expect(within(screen.getByRole('region', { name: 'Current weather' })).getByText('Johor Bahru, MY')).toBeVisible()
       expect(screen.queryAllByText(/Some weather details are unavailable/)).toHaveLength(partial ? 1 : 0)
     }
     expect(service.findLocations).toHaveBeenCalledTimes(1)
@@ -160,7 +161,8 @@ describe('weather search UI', () => {
     expect(screen.queryByRole('heading', { name: 'Current weather' })).not.toBeInTheDocument()
     expect(screen.queryByText(/Some weather details are unavailable/)).not.toBeInTheDocument()
     await act(async () => nextLocations.resolve([singapore]))
-    await screen.findByText('Singapore, SG')
+    await screen.findByRole('region', { name: 'Current weather' })
+    expect(within(screen.getByRole('region', { name: 'Current weather' })).getByText('Singapore, SG')).toBeVisible()
     expect(screen.getByRole('status')).toHaveTextContent('Weather loaded for Singapore, SG.')
     expect(screen.queryByText(/Some weather details are unavailable/)).not.toBeInTheDocument()
   })
@@ -197,8 +199,12 @@ describe('weather search UI', () => {
     await user.click(screen.getByRole('button', { name: 'Clear' }))
     expect(fetcher.mock.calls[1]?.[1]?.signal?.aborted).toBe(true)
     await user.type(input, 'Singapore{Enter}')
-    await screen.findByText('Singapore, SG')
+    await screen.findByRole('region', { name: 'Current weather' })
+    expect(within(screen.getByRole('region', { name: 'Current weather' })).getByText('Singapore, SG')).toBeVisible()
     await act(async () => body.resolve(fullWeather()))
+    const history = within(screen.getByRole('region', { name: 'Search History' }))
+    expect(history.getAllByRole('listitem')).toHaveLength(1)
+    expect(history.getByText('Singapore, SG')).toBeVisible()
     expect(screen.getByText('15°C')).toBeVisible()
     expect(screen.queryByText('29°C')).not.toBeInTheDocument()
     expect(screen.getByRole('status')).toHaveTextContent('Weather loaded for Singapore, SG.')

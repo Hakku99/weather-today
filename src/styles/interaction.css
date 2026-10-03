@@ -14,5 +14,11 @@ button:disabled { color: #555; background: #eee; cursor: default; }
 }
 .weather-art { max-inline-size: 100%; block-size: auto; }
 dd, button { overflow-wrap: anywhere; }
+.storage-warning { display: block; margin-block-start: 0.5rem; }
+.history-list { list-style: none; padding: 0; }
+.history-row { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; margin-block: 1rem; }
+.history-details { display: grid; gap: 0.25rem; min-inline-size: 0; overflow-wrap: anywhere; }
+.history-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.history-actions button { min-inline-size: 9rem; }
 @keyframes search-rotation { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .search-indicator { animation: none; } }
