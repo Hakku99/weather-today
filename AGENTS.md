@@ -1,6 +1,6 @@
 # Repository Instructions
 
-- Follow `AAPDS.md`. Product authority: `docs/requirements/MQ_Frontend.pdf` and `docs/requirements/MQ_Checklist.pdf`, preserving the original content and SHA-256 baselines recorded in SPEC.
+- Follow `AAPDS.md`. Product authority: `docs/requirements/MQ_Frontend.pdf` and the user-approved sanitized `docs/requirements/MQ_Checklist.pdf`. Preserve all product requirements and verify the applicable file SHA-256 baselines in SPEC; the checklist's original hash is retained separately as source provenance.
 - Read `docs/SPEC.md` for behavior and acceptance, and `docs/PLAN.md` for architecture, milestones, decisions, and current status. Inspect Git state before changing files.
 - This is Greenfield. **Pre-Implementation Approval Gate was approved on 2026-10-03**, recorded in PLAN. Proceed with the approved milestones; seek renewed alignment only for material scope/architecture changes or genuine external blockers.
 - All repository artifacts, product copy, and documentation are English; communicate with the user in Chinese.

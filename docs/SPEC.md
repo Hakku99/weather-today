@@ -1,14 +1,14 @@
 # Today's Weather - Specification
 
 Status: Approved implementation baseline. The user explicitly approved the updated Phase 1 and Phase 2 and authorized execution on 2026-10-03; see PLAN's Implementation Approval record. Historical notes below distinguish earlier scope confirmations from that subsequent overall approval.
-Date: 2026-10-03 (Asia/Kuala_Lumpur).
+Date: 2026-10-04 (Asia/Kuala_Lumpur).
 
 ## Authoritative Sources
 
 | Source | Authority and coverage |
 | --- | --- |
 | [MQ_Frontend.pdf](requirements/MQ_Frontend.pdf) | All four pages: React requirement and evaluation criteria; functional wireframes; six numbered requirements; desktop and mobile light/dark visual references; reference and asset links. |
-| [MQ_Checklist.pdf](requirements/MQ_Checklist.pdf) | Entire single scanned page, visually read: submission requirements, persistent history, all buttons, errors, loading, responsive design, quality checks, README, and recommended enhancements. |
+| [MQ_Checklist.pdf](requirements/MQ_Checklist.pdf) | User-approved sanitized single-page copy of the visually reviewed original: all 12 checklist items, the ReactJS requirement and final button/function testing instructions are preserved. Personal/contact details and personal PDF metadata are omitted. |
 | [AAPDS.md](../AAPDS.md) | Complete v1.2.2 execution protocol; phase ordering, approval, engineering, verification, and final review rules. |
 | User instruction dated 2026-10-02 | Complete SPECIFY and ALIGN & PLAN only; preserve original sources; no bootstrap, dependency installation, or implementation before explicit approval; English artifacts and Chinese conversation. |
 | User follow-up dated 2026-10-02 | UI must reference the Figma design linked in the brief and use the supplied images in the root `assets/` directory. |
@@ -32,13 +32,21 @@ Date: 2026-10-03 (Asia/Kuala_Lumpur).
 | User minimum viewport decision dated 2026-10-04 | Support effective layout viewport widths of 280 CSS pixels and above, including after zoom. Smaller effective widths are outside required acceptance. Preserve the approved temperature sizes; do not shrink text or clip values to accommodate the former 160px stress case. |
 | User SEO extension approval dated 2026-10-04 | The user published the existing frontend at https://weather-today-pi.vercel.app/ and approved implementation after review. Complete homepage metadata, favicon, sharing metadata, WebSite structured data, robots.txt and a homepage-only sitemap. Derive square icons from assets/sun.png using proportional resizing and transparent padding, preserve the source, and store all derived images under assets/seo/. Emit stable production paths; retain the React/Vite frontend architecture. |
 
-The authoritative PDFs are preserved in `docs/requirements/`; their contents match the original SHA-256 baselines below. The root-level PDF files are no longer present. Both PDFs govern the product together. This specification interprets them and never silently reduces their requirements.
+User checklist sanitization approval dated 2026-10-04: replace the checklist with a clean copy preserving its requirements, synchronize documentation and commit locally to main. This authorizes the privacy edit without changing the product contract, pushing to the remote or rewriting Git history.
 
-Source SHA-256 baselines:
+The authoritative PDFs are available in `docs/requirements/`. MQ_Frontend.pdf matches its original baseline. MQ_Checklist.pdf is the user-approved sanitized derivative; compare it with the current-file hash below, not its original-source hash. The original checklist hash remains source provenance, and earlier Git commits still contain the unredacted original. The root-level PDF files are no longer present. Both PDFs govern the product together. This specification interprets them and never silently reduces their requirements.
+
+Original-source SHA-256 baselines (historical provenance):
 
 - MQ_Frontend.pdf: `04B05BB77A33D5CE46E31F3DE916FE0EF75FF1DC2D78DC11FD6FD3C2512659DE`
 - MQ_Checklist.pdf: `F556D59D0A56089FD0012450CD02EF7B4AAC291E2DD989D133128BCEFAAAB5F7`
 - AAPDS.md: `1742C3884F3BBDB470C968B9EB1B9CDC5197A30B78657CC5675DFEB41F5ED933`
+
+Current-file SHA-256 baseline for the sanitized checklist (2026-10-04):
+
+- MQ_Checklist.pdf: `E4B6831632E2AD88877AC646F0DF52FB261613738E3196B84D2C19BF4642595D`
+
+MQ_Frontend.pdf and AAPDS.md continue to use their original-source baselines above. The checklist's email header, greeting, signature and contact/footer details are omitted. All 12 checklist items and the non-personal introductory and closing requirements are retained. A fresh PDF document removes personal author/title metadata and avoids carrying over the original image, OCR layers or editing data. This change sanitizes the current checklist only; it does not erase prior commits or certify other repository files as free of personal information.
 
 ## Product Goal and Scope
 
@@ -323,6 +331,6 @@ This is the future product completion standard, not a statement of current compl
 - Actual running UI is inspected against the duplicate's four linked Figma frames at 1440 x 900 and 393 x 852 and the intermediate/edge widths above, plus both desktop/mobile PDF references. Verify asset slots, geometry, aspect ratios, and theme surfaces; record the required form/data/accessibility adaptations rather than claiming an unmodified pixel-identical mockup. All required data remains visible and accessible.
 - A real OpenWeather success path and replay have been verified with an authorized key. Mocked tests alone do not prove the external integration.
 - Unused code, dead imports, placeholder handlers, debug output, fake production data, and unfinished functions are removed.
-- README setup is reproduced; both authoritative PDFs in `docs/requirements/` and `AAPDS.md` retain their SHA-256 baseline values; no credentials are committed.
-- AAPDS Phase 4 rereads both full original PDFs and this SPEC, compares them to the actual product, reruns final checks, and resolves every blocking gap. PLAN records evidence and honest remaining limitations.
+- README setup is reproduced; both authoritative PDFs in `docs/requirements/` and `AAPDS.md` match their applicable current-file SHA-256 baselines above; the checklist's original hash remains provenance and its sanitized copy preserves every product requirement; no credentials are committed.
+- AAPDS Phase 4 rereads both full requirement PDFs, including the approved sanitized checklist, and this SPEC, compares them to the actual product, reruns final checks, and resolves every blocking gap. PLAN records evidence and honest remaining limitations.
 - If a required check cannot run (for example, no active API key), retain the affected milestone as incomplete and report the precise blocker. Do not declare DONE or submission-ready.
