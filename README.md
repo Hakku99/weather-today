@@ -2,7 +2,7 @@
 
 A React application for current-weather search, persistent local search history, and responsive light/dark themes. It uses OpenWeather for real weather and the supplied Figma design and images for presentation.
 
-**Status:** M0-M4 are complete, including reviewer documentation and isolated clean-install reproduction on 2026-10-04. M5 final acceptance remains outstanding; the project is not yet declared DONE. Dated verification evidence is in [PLAN](docs/PLAN.md).
+**Status:** M0-M5 and final acceptance are complete as of 2026-10-04 for the approved local assessment scope. Final verification passed 173 unit/component tests, 135 browser tests, production-preview checks, native Chromium zoom and live OpenWeather search/replay. Dated evidence and coverage limits are in [PLAN](docs/PLAN.md#m5-final-acceptance-and-aapds-phase-4---2026-10-04). Deployment and sending the submission are outside scope.
 
 ## Quick start
 
@@ -127,7 +127,7 @@ Repeat browser installation after Playwright version changes. Both scripts use t
 
 Playwright starts/stops its own development server and covers desktop Chromium/Firefox/WebKit plus mobile Chromium/WebKit emulation. Unit/component and E2E tests use controlled provider responses. The E2E server uses a dummy credential, so a real key is not required and passing E2E does not prove live OpenWeather access. Coverage includes success/degradation/errors, cancellation, candidates, all actions, persistence and multi-tab locking, themes, keyboard behavior and responsive layouts. Reports are in ignored `playwright-report/` and failure artifacts in `test-results/`.
 
-M1/M2 separately verified real provider search and history replay on 2026-10-03. Native Chromium 200% zoom and cross-engine CSS zoom have separate M3 evidence; mobile emulation is not physical-device certification. See [PLAN](docs/PLAN.md) for the version and scope of each executed check. Final requirement-by-requirement review and live-provider smoke remain M5.
+M5 separately verified real provider search and fresh history replay from the production build at desktop/mobile layouts on 2026-10-04, following the earlier M1/M2 live checks. Final native Chromium 200% zoom and cross-engine CSS zoom have separate evidence; mobile emulation is not physical-device certification. The original-requirement/SPEC-to-product review and final acceptance are complete. See [PLAN](docs/PLAN.md) for executed checks, approved visual exceptions and environment limits. Clean installation was verified on Windows; macOS/Linux installation and native Firefox/WebKit zoom were not independently executed.
 
 ## Architecture
 
