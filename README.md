@@ -2,7 +2,7 @@
 
 A React application for current-weather search, persistent local search history, and responsive light/dark themes. It uses OpenWeather for real weather and the supplied Figma design and images for presentation.
 
-**Status:** M0-M5 and final acceptance are complete as of 2026-10-04 for the approved local assessment scope. Final verification passed 173 unit/component tests, 135 browser tests, production-preview checks, native Chromium zoom and live OpenWeather search/replay. Dated evidence and coverage limits are in [PLAN](docs/PLAN.md#m5-final-acceptance-and-aapds-phase-4---2026-10-04). Deployment and sending the submission are outside scope.
+**Status:** M0-M5 and the user-approved homepage SEO extension are complete as of 2026-10-04. Latest verification passed 173 unit/component tests, 150 browser tests and local production metadata/asset checks. Earlier M5 evidence includes native Chromium zoom and live OpenWeather search/replay. Dated evidence and coverage limits are in [PLAN](docs/PLAN.md). The user operates Vercel hosting; the SEO source changes await publication. Sending the submission remains outside scope.
 
 ## Quick start
 
@@ -38,7 +38,7 @@ Open the address printed by Vite, normally `http://127.0.0.1:5173`. The server b
 
 On first load, the page shows a placeholder weather summary and any saved history/theme. It makes no automatic weather or geolocation request. Search for `Johor, MY` and choose a location if prompted.
 
-The API key is **visible in browser code and network requests**. An environment file does not make a frontend key confidential. This local assessment has no backend or shared credential; a confidential-key proxy would require a separate architecture change.
+The API key is **visible in browser code and network requests**. An environment file does not make a frontend key confidential. This frontend has no backend; a confidential-key proxy would require a separate architecture change.
 
 ## Build and preview
 
@@ -47,7 +47,7 @@ npm run build
 npm run preview
 ```
 
-Open the printed address, normally `http://127.0.0.1:4173`. The build includes type checking and writes to ignored `dist/`. Set the key before building; changing it requires another build. Stop preview before running browser tests, which also use port 4173. Preview serves the local production build; public deployment is outside this project.
+Open the printed address, normally `http://127.0.0.1:4173`. The build includes type checking and writes to ignored `dist/`. Set the key before building; changing it requires another build. Stop preview before running browser tests, which also use port 4173. Preview serves the local production build.
 
 ## Using the application
 
@@ -129,6 +129,14 @@ Playwright starts/stops its own development server and covers desktop Chromium/F
 
 M5 separately verified real provider search and fresh history replay from the production build at desktop/mobile layouts on 2026-10-04, following the earlier M1/M2 live checks. Final native Chromium 200% zoom and cross-engine CSS zoom have separate evidence; mobile emulation is not physical-device certification. The original-requirement/SPEC-to-product review and final acceptance are complete. See [PLAN](docs/PLAN.md) for executed checks, approved visual exceptions and environment limits. Clean installation was verified on Windows; macOS/Linux installation and native Firefox/WebKit zoom were not independently executed.
 
+## Homepage metadata and icons
+
+The canonical homepage is [weather-today-pi.vercel.app](https://weather-today-pi.vercel.app/), supplied by the user after their Vercel deployment. [config/seo.ts](config/seo.ts) owns title, description, production URL and image paths. Vite injects metadata into initial HTML for crawlers that do not execute JavaScript, including canonical, Open Graph, Twitter Summary Card and WebSite structured data. Development and builds use that same production identity. If the production domain changes, update this configuration and rebuild.
+
+Square favicon, ICO, Apple Touch Icon and a separate 512px sharing thumbnail are derived from the unchanged `assets/sun.png` through proportional resizing and transparent padding. All derived files live in [assets/seo/](assets/seo/), and builds emit them at stable `/assets/seo/` URLs. `robots.txt` and a sitemap containing only the homepage are generated from the same configuration and also served during development. Meta keywords are omitted. There are no independently indexed city pages, and metadata does not guarantee indexing, ranking or immediate sharing-preview updates.
+
+After publication, verify the production page's metadata/assets and indexing headers; Vercel normally adds `noindex` to preview deployments. This source extension does not publish a deployment or register Google Search Console.
+
 ## Architecture
 
 React 19 manages one client-rendered page; TypeScript 6 provides strict model and component checks, and Vite 8 provides local development and bundling. Native `fetch`, AbortController, localStorage and Web Locks handle requests, cancellation and persistence. There is no router, backend, global-state library or UI component framework. `i18n-iso-countries` supplies country normalization with its English locale; Noto Sans is bundled locally. Exact versions are in the manifest and lockfile.
@@ -146,6 +154,8 @@ src/test/              Test setup and fixtures
 tests/e2e/             Browser acceptance tests
 scripts/playwright.mjs Project-local browser installation/execution
 assets/                Supplied artwork and control glyphs
+assets/seo/            Derived site icons and sharing thumbnail
+config/seo.ts          Site identity, initial metadata and crawl files
 public/fonts/          Font license notice
 docs/                  Specification, plan and original requirements
 ```
@@ -158,7 +168,7 @@ Search flows from input parsing/country validation to geocoding, explicit select
 - [SPEC](docs/SPEC.md#ui-behavior-assumptions) documents the approved assumptions separately from the PDFs: combined city/country input, explicit candidates, no default request, duplicate success events, Reset versus Delete, cancellation, distinct timestamps, field degradation, both themes and automated tests. [PLAN](docs/PLAN.md) records architecture and dated verification.
 - The four original root PNGs in `assets/` are unchanged. `sun.png` is the decorative hero; `bg-light.png` and `bg-dark.png` provide themed backgrounds. `cloud.png` is preserved but has no assigned role in the approved design. Control glyphs in `assets/controls/` are bundled locally from the design or supplied assets; no expiring design URL is needed at runtime.
 - Noto Sans 400/700 is self-hosted through `@fontsource/noto-sans`. Its copyright and OFL-1.1 terms are preserved in [the font notice](public/fonts/noto-sans-OFL.txt), included in production output. No Google Fonts network request is required.
-- Weather availability depends on the reviewer's active key, provider access/quota and network. Browser-visible credentials, local-only storage, bitmap differences and the minimum layout width are deliberate boundaries. Forecasts, geolocation, maps, accounts, a confidential-key proxy and public hosting are outside scope.
+- Weather availability depends on the active key, provider access/quota and network. Browser-visible credentials, local-only storage, bitmap differences and the minimum layout width are deliberate boundaries. Forecasts, geolocation, maps, accounts and a confidential-key proxy are outside scope. The user operates public hosting; the homepage metadata extension retains the existing frontend architecture.
 
 ## Troubleshooting
 
