@@ -101,6 +101,7 @@ abbr[title] { text-decoration: none; }
 .weather-art {
   position: absolute; width: var(--weather-art-size); max-width: 300px; height: auto; aspect-ratio: 648 / 655;
   right: 15px; top: var(--weather-art-top); pointer-events: none; user-select: none;
+  transition: width 180ms ease-out;
 }
 .weather-summary { position: relative; margin-top: 4px; padding-inline: 10px; }
 /* Cap content-sized columns so long fallback/category text cannot squeeze other fields to single letters. */
@@ -212,4 +213,13 @@ abbr[title] { text-decoration: none; }
   .history-details { flex-basis: 100%; }
   .history-actions { margin-left: auto; }
 }
-@media (prefers-reduced-motion: reduce) { .search-indicator { animation: none; } }
+@media (max-width: 349px) {
+  .weather-panel { --weather-art-top: -60px; }
+}
+@media (max-width: 300px) {
+  .weather-panel { --weather-art-size: 105px; --weather-art-top: -46px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .search-indicator { animation: none; }
+  .weather-art { transition: none; }
+}

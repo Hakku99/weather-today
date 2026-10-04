@@ -25,11 +25,14 @@ test('weather card preserves approved breakpoints, typography, metadata and opti
   await expect(card.locator('.weather-observation dd')).toHaveText(/^\d{2}-\d{2}-\d{4} \d{2}:\d{2} (am|pm)$/)
   await expect(card.locator('.weather-observation dd')).toHaveAccessibleDescription(/UTC\+08:00/)
 
-  for (const width of [280, 320, 350, 351, 360, 374, 375, 393, 600, 601, 660, 661, 1440]) {
+  for (const width of [280, 284, 285, 300, 301, 320, 349, 350, 351, 360, 374, 375, 393, 600, 601, 660, 661, 1440]) {
     await page.setViewportSize({ width, height: 900 })
     for (const theme of ['Light', 'Dark'] as const) {
       await selectTheme(page, theme)
       await page.evaluate(() => document.fonts.ready)
+      await page.locator('.weather-art').evaluate(async element => {
+        await Promise.all(element.getAnimations().map(animation => animation.finished))
+      })
       const geometry = await card.evaluate(element => {
         const fields = ['location', 'observation', 'humidity', 'condition'].map(name => {
           const field = element.querySelector<HTMLElement>(`.weather-${name}`)!
@@ -61,7 +64,7 @@ test('weather card preserves approved breakpoints, typography, metadata and opti
       expect(geometry.fields.every(field => field.color === (theme === 'Light' ? 'rgb(102, 102, 102)' : 'rgb(238, 229, 255)'))).toBe(true)
       expect(geometry.temperatureFont).toBe(width <= 660 ? '50px' : '81px')
       const desktopImageWidth = Math.min(300, Math.max(169.5, Math.min(700, width - 48) - 400))
-      expect(geometry.imageWidth).toBeCloseTo(width <= 350 ? 140 : width <= 660 ? 169.5 : desktopImageWidth)
+      expect(geometry.imageWidth).toBeCloseTo(width <= 300 ? 105 : width <= 350 ? 140 : width <= 660 ? 169.5 : desktopImageWidth)
       if (width <= 374) {
         expect(geometry.columns).toHaveLength(1)
         expect(geometry.fields.every(field => field.column === '1' && field.align === 'left')).toBe(true)
